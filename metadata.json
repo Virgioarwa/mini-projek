@@ -1,0 +1,6 @@
+{
+  "name": "Virgio Celluler - Kasir & Transaksi Konter",
+  "description": "Aplikasi kasir dan pencatatan transaksi konter pulsa, PPOB, e-wallet, voucher, tarik tunai, dan cetak struk untuk Virgio Celluler.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
