@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="phoneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Inner Soft Ring -->
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="4" />
+
+  <!-- Phone Mockup Container (Shadowed) -->
+  <g filter="url(#dropShadow)">
+    <rect x="136" y="76" width="240" height="360" rx="40" fill="#0f172a" stroke="#ffffff" stroke-opacity="0.2" stroke-width="6" />
+    <!-- Screen Area -->
+    <rect x="152" y="106" width="208" height="300" rx="24" fill="#1e293b" />
+
+    <!-- Speaker Bar -->
+    <rect x="220" y="88" width="72" height="6" rx="3" fill="#64748b" />
+
+    <!-- Store Awning Icon inside Screen -->
+    <path d="M176 150 L336 150 L324 186 C320 196 308 202 298 200 C288 198 280 188 276 186 C272 188 264 198 254 200 C244 202 232 196 228 186 C224 188 216 198 206 200 C196 202 184 196 180 186 Z" fill="url(#accentGrad)" />
+
+    <!-- Lightning Bolt / Energy (Pulsa & Kuota) -->
+    <path d="M266 215 L232 280 L260 280 L242 345 L288 270 L260 270 Z" fill="#fbbf24" stroke="#d97706" stroke-width="2" stroke-linejoin="round" />
+
+    <!-- Signal Waves (Top Right) -->
+    <path d="M305 130 A 24 24 0 0 1 325 150" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round" />
+    <path d="M315 120 A 38 38 0 0 1 345 150" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round" opacity="0.6" />
+
+    <!-- Home Indicator -->
+    <rect x="216" y="388" width="80" height="5" rx="2.5" fill="#94a3b8" />
+  </g>
+
+  <!-- Tagline Banner on bottom -->
+  <g filter="url(#dropShadow)">
+    <rect x="116" y="415" width="280" height="48" rx="24" fill="#0f172a" stroke="#10b981" stroke-width="3" />
+    <text x="256" y="446" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="2">VIRGIO POS</text>
+  </g>
+</svg>

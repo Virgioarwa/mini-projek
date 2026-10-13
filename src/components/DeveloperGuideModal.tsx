@@ -13,6 +13,9 @@ import {
   Sparkles,
   BookOpen,
   Terminal,
+  Smartphone,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 
 interface DeveloperGuideModalProps {
@@ -28,6 +31,13 @@ export const DeveloperGuideModal: React.FC<DeveloperGuideModalProps> = () => {
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2500);
   };
+
+  const capacitorSnippet = `# Langkah Membuat APK Android Menggunakan Capacitor
+npm install @capacitor/core @capacitor/cli @capacitor/android
+npx cap init "Virgio Celluler" "com.virgiocelluler.pos"
+npm run build
+npx cap add android
+npx cap open android # Buka di Android Studio lalu klik 'Build APK'`;
 
   const bluetoothSnippet = `// Contoh Snippet Web Bluetooth API untuk Printer Thermal ESC/POS di Chrome/Android
 async function connectBluetoothPrinter() {
@@ -75,12 +85,99 @@ app.post('/api/ppob/topup', async (req, res) => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">
-              Panduan Pengembangan Fitur di Masa Depan
+              Panduan Pengembangan Fitur & Aplikasi APK
             </h2>
             <p className="text-xs text-slate-300 mt-1">
-              Petunjuk arsitektur, integrasi hardware, API PPOB, dan database untuk mengembangkan toko <strong className="text-white">Virgio Celluler</strong> ke tingkat yang lebih canggih.
+              Petunjuk install di HP Android, build APK, integrasi hardware printer bluetooth, dan API PPOB untuk toko <strong className="text-white">Virgio Celluler</strong>.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* SPECIAL HIGHLIGHT CARD: CARA JADI APK & INSTALL DI HP */}
+      <div className="bg-gradient-to-br from-emerald-950/40 via-slate-900 to-indigo-950/40 rounded-2xl p-6 border-2 border-emerald-500/50 shadow-lg text-white">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+            <Smartphone className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-white">
+                Apakah Bisa Dibuat Jadi APK Android? (JAWABAN: BISA BANGET!)
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950 uppercase">
+                Siap Dipakai
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Aplikasi ini sudah dikonfigurasi penuh dengan <strong>Web App Manifest</strong>, <strong>Service Worker Offline</strong>, dan <strong>Ikon Android HD</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Cara 1 */}
+          <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-emerald-400 uppercase text-[11px]">
+                Metode 1: Pasang Langsung di HP (PWA)
+              </span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">
+                Tanpa Ribet
+              </span>
+            </div>
+            <p className="text-slate-300 leading-relaxed">
+              Anda tidak perlu mengunduh file APK 50MB yang berat. Cukup klik tombol <strong>"Install App / APK"</strong> di pojok kanan atas layar ini, atau:
+            </p>
+            <ol className="list-decimal pl-4 space-y-1 text-slate-200">
+              <li>Buka link aplikasi di browser Chrome HP Anda.</li>
+              <li>Klik menu titik tiga (⋮) di pojok kanan atas browser.</li>
+              <li>Pilih <strong>"Instal aplikasi"</strong> / <strong>"Tambahkan ke Layar Utama"</strong>.</li>
+              <li>Aplikasi akan muncul seperti aplikasi bawaan Android di menu HP Anda!</li>
+            </ol>
+          </div>
+
+          {/* Cara 2 */}
+          <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-indigo-400 uppercase text-[11px]">
+                Metode 2: Convert Jadi File .APK Asli (PWABuilder)
+              </span>
+              <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">
+                1 Menit
+              </span>
+            </div>
+            <p className="text-slate-300 leading-relaxed">
+              Jika Anda ingin file mentahan <code>.apk</code> untuk dibagikan offline atau upload ke Play Store:
+            </p>
+            <ol className="list-decimal pl-4 space-y-1 text-slate-200">
+              <li>Buka web <strong>PWABuilder.com</strong> (alat resmi dari Microsoft).</li>
+              <li>Tempelkan (Paste) URL website aplikasi Virgio Celluler ini.</li>
+              <li>Klik <strong>Package for Android</strong> &rarr; <strong>Generate APK</strong>.</li>
+              <li>File <code>.apk</code> langsung terunduh dan siap diinstal di HP Android mana saja!</li>
+            </ol>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+          <span>Ingin build APK manual dengan Android Studio? Gunakan Capacitor:</span>
+          <button
+            type="button"
+            onClick={() => handleCopy(capacitorSnippet, 'cap')}
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            {copiedKey === 'cap' ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Perintah Disalin!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Salin Perintah Capacitor CLI</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

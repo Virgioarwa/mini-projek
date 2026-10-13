@@ -12,6 +12,7 @@ import { DailyArchiveView } from './components/DailyArchiveView';
 import { StoreSettingsModal } from './components/StoreSettingsModal';
 import { DeveloperGuideModal } from './components/DeveloperGuideModal';
 import { CloseDayModal } from './components/CloseDayModal';
+import { InstallGuideModal } from './components/InstallGuideModal';
 import {
   Product,
   Transaction,
@@ -508,6 +509,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* 6. Modal Panduan Pasang Layar Beranda / APK */}
+      <InstallGuideModal />
     </div>
   );
 }

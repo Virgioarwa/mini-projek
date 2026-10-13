@@ -12,6 +12,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { StoreSettings } from '../types';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   settings: StoreSettings;
@@ -136,6 +137,9 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Settings className="w-4 h-4" />
             </button>
+
+            {/* Tombol Install App / APK */}
+            <PWAInstallButton />
 
             {/* Tombol Deteksi / Ganti Tema Gelap & Terang */}
             {onToggleTheme && (
