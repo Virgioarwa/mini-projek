@@ -201,13 +201,13 @@ app.post('/api/ppob/topup', async (req, res) => {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
-              Saat ini, aplikasi sudah mendukung <strong>Direct Print (window.print)</strong> dengan tata letak khusus struk thermal 58mm/80mm. Jika ingin menghubungkan langsung ke printer mini Bluetooth (seperti Panda, VSC, Iware, RPP02) di HP Android/Chrome tanpa dialog dialog popup:
+              Aplikasi telah dilengkapi dengan <strong>3 mode pencetakan struk kasir</strong> yang optimal untuk toko konter:
             </p>
 
             <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 list-disc pl-4 mb-3">
-              <li>Gunakan standar <strong>Web Bluetooth API</strong> bawaan browser Google Chrome.</li>
-              <li>Manfaatkan library <code>esc-pos-encoder</code> untuk format teks, bold, cut paper, dan logo toko.</li>
-              <li>Printer akan terhubung sekali dan struk keluar dalam hitungan 0.5 detik.</li>
+              <li><strong>Cetak Thermal Sistem (58mm/80mm):</strong> Menggunakan container cetak terisolasi sehingga struk dipotong pas 1 lembar tanpa terpotong atau keluar berulang kali.</li>
+              <li><strong>Cetak via RawBT (Android):</strong> Format instan khusus aplikasi driver RawBT untuk cetak Bluetooth/USB tanpa dialog browser.</li>
+              <li><strong>Cetak Langsung Web Bluetooth (ESC/POS):</strong> Terhubung langsung dari Chrome ke printer mini (Panda, VSC, Iware, RPP02) secara nirkabel.</li>
             </ul>
           </div>
 

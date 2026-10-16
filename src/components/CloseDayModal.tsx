@@ -88,7 +88,9 @@ export const CloseDayModal: React.FC<CloseDayModalProps> = ({
           <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs">
             <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
               <span>Modal Kas Laci Awal:</span>
-              <span className="font-mono font-semibold">{formatRupiah(initialCash)}</span>
+              <span className="font-mono font-semibold">
+                {initialCash === 0 ? 'Rp 0 (Tanpa Kas)' : formatRupiah(initialCash)}
+              </span>
             </div>
 
             <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">

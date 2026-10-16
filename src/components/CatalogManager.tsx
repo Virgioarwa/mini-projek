@@ -606,6 +606,22 @@ export const CatalogManager: React.FC<CatalogManagerProps> = ({
                     onChange={(e) => setAdminFee(Number(e.target.value))}
                     className="w-full px-3 py-2 text-xs font-mono text-emerald-600 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {[0, 2000, 2500, 3000, 5000, 7000, 10000].map((fee) => (
+                      <button
+                        key={fee}
+                        type="button"
+                        onClick={() => setAdminFee(fee)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition cursor-pointer border ${
+                          adminFee === fee
+                            ? 'bg-emerald-600 text-white border-emerald-700 font-bold shadow-xs'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                        }`}
+                      >
+                        {fee === 0 ? '0' : fee >= 1000 ? `${fee / 1000}rb` : fee}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

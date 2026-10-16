@@ -13,6 +13,7 @@ import {
   FileText,
   Check,
   ShieldCheck,
+  Cloud,
 } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { formatRupiah } from '../utils/formatters';
@@ -24,6 +25,7 @@ interface StoreSettingsModalProps {
   settings: StoreSettings;
   onSaveSettings: (settings: StoreSettings) => void;
   onDataImported: () => void;
+  onOpenGoogleSync?: () => void;
 }
 
 export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
@@ -32,6 +34,7 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
   settings,
   onSaveSettings,
   onDataImported,
+  onOpenGoogleSync,
 }) => {
   const [storeName, setStoreName] = useState(settings.storeName || 'Virgio Celluler');
   const [tagline, setTagline] = useState(settings.tagline || '');
@@ -187,13 +190,36 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
                     type="number"
                     min="0"
                     step="50000"
-                    value={initialCashDefault}
-                    onChange={(e) => setInitialCashDefault(Number(e.target.value))}
+                    value={initialCashDefault === 0 ? '0' : (initialCashDefault || '')}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : Number(e.target.value);
+                      setInitialCashDefault(isNaN(val) ? 0 : Math.max(0, val));
+                    }}
                     className="w-full pl-8 pr-2.5 py-1.5 text-xs font-bold font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400">
-                  Uang kembalian fisik di laci saat pagi buka toko
+                <div className="flex gap-1.5 mt-1.5">
+                  {[0, 100000, 300000, 500000].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setInitialCashDefault(val)}
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded border cursor-pointer ${
+                        val === 0
+                          ? initialCashDefault === 0
+                            ? 'bg-rose-600 text-white border-rose-600'
+                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                          : initialCashDefault === val
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      {val === 0 ? 'Rp 0 (Tanpa Kas)' : `${(val / 1000).toFixed(0)}rb`}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Pilih Rp 0 jika ingin kasir harian selalu mulai tanpa kas fisik.
                 </span>
               </div>
 
@@ -301,6 +327,20 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
                     className="hidden"
                   />
                 </label>
+
+                {onOpenGoogleSync && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenGoogleSync();
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Cloud className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Cadangan Google Drive & Sheets</span>
+                  </button>
+                )}
               </div>
 
               {importStatus && (

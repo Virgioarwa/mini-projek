@@ -13,6 +13,7 @@ import {
   Receipt,
   Eye,
   CheckCircle2,
+  Pencil,
 } from 'lucide-react';
 import { Transaction, TransactionCategory } from '../types';
 import {
@@ -25,6 +26,7 @@ import { exportTransactionsToExcel, exportTransactionsToCSV } from '../utils/exc
 interface TransactionListProps {
   transactions: Transaction[];
   onOpenReceipt: (trx: Transaction) => void;
+  onEditTransaction: (trx: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
   onOpenNewTransaction: () => void;
 }
@@ -32,6 +34,7 @@ interface TransactionListProps {
 export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   onOpenReceipt,
+  onEditTransaction,
   onDeleteTransaction,
   onOpenNewTransaction,
 }) => {
@@ -298,6 +301,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                           title="Cetak Struk Transaksi"
                         >
                           <Printer className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onEditTransaction(trx)}
+                          className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-700 transition cursor-pointer"
+                          title="Edit Transaksi (Koreksi Nominal / Nama)"
+                        >
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           type="button"

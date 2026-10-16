@@ -10,6 +10,9 @@ import {
   Moon,
   Sun,
   Lock,
+  Calculator,
+  TrendingUp,
+  Cloud,
 } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -17,11 +20,14 @@ import { PWAInstallButton } from './PWAInstallButton';
 interface HeaderProps {
   settings: StoreSettings;
   currentDate: string;
-  activeTab: 'pos' | 'catalog' | 'archives' | 'guide';
-  setActiveTab: (tab: 'pos' | 'catalog' | 'archives' | 'guide') => void;
+  activeTab: 'pos' | 'catalog' | 'archives' | 'analytics' | 'calculator' | 'guide';
+  setActiveTab: (tab: 'pos' | 'catalog' | 'archives' | 'analytics' | 'calculator' | 'guide') => void;
   onOpenNewTransaction: () => void;
   onOpenCloseDayModal: () => void;
   onOpenSettings: () => void;
+  onOpenGoogleSync?: () => void;
+  isGoogleConnected?: boolean;
+  googleUserEmail?: string;
   todayTransactionCount: number;
   lowStockCount?: number;
   theme?: 'system' | 'dark' | 'light';
@@ -36,6 +42,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewTransaction,
   onOpenCloseDayModal,
   onOpenSettings,
+  onOpenGoogleSync,
+  isGoogleConnected,
+  googleUserEmail,
   todayTransactionCount,
   lowStockCount = 0,
   theme,
@@ -138,6 +147,33 @@ export const Header: React.FC<HeaderProps> = ({
               <Settings className="w-4 h-4" />
             </button>
 
+            {/* Cadangan Google Drive & Spreadsheet */}
+            {onOpenGoogleSync && (
+              <button
+                type="button"
+                onClick={onOpenGoogleSync}
+                className={`flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-lg border font-medium text-xs transition-all active:scale-95 cursor-pointer ${
+                  isGoogleConnected
+                    ? 'bg-blue-950/70 border-blue-500/50 text-blue-300 hover:bg-blue-900/60'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
+                }`}
+                title={
+                  isGoogleConnected
+                    ? `Google Drive & Spreadsheet Aktif (${googleUserEmail || ''})`
+                    : 'Cadangkan ke Google Drive & Spreadsheet'
+                }
+                aria-label="Cadangan Cloud Google Drive"
+              >
+                <Cloud className={`w-4 h-4 ${isGoogleConnected ? 'text-blue-400' : 'text-slate-400'}`} />
+                <span className="hidden sm:inline">
+                  {isGoogleConnected ? 'Google Cloud' : 'Cadangan'}
+                </span>
+                {isGoogleConnected && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+              </button>
+            )}
+
             {/* Tombol Install App / APK */}
             <PWAInstallButton />
 
@@ -173,13 +209,13 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* BARIS 3: Navigasi Tab - DI MOBILE HANYA LOGO/ICON SAJA (TIDAK ADA TULISAN MENUMPUK) */}
-        <div className="grid grid-cols-4 border-t border-slate-800/80 pt-1">
+        {/* BARIS 3: Navigasi Tab - 6 Tab Termasuk Analisis Penjualan */}
+        <div className="grid grid-cols-6 border-t border-slate-800/80 pt-1">
           {/* Tab 1: Kasir Hari Ini */}
           <button
             type="button"
             onClick={() => setActiveTab('pos')}
-            className={`py-2 px-1 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
+            className={`py-2 px-1 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
               activeTab === 'pos'
                 ? 'text-indigo-400 border-indigo-500 bg-slate-800/60'
                 : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/30'
@@ -188,7 +224,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Kasir Hari Ini"
           >
             <Store className="w-5 h-5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="hidden sm:inline">Kasir Hari Ini</span>
+            <span className="hidden sm:inline">Kasir</span>
             {todayTransactionCount > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-500 text-white font-bold leading-none">
                 {todayTransactionCount}
@@ -200,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('catalog')}
-            className={`py-2 px-1 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 relative ${
+            className={`py-2 px-1 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 relative ${
               activeTab === 'catalog'
                 ? 'text-indigo-400 border-indigo-500 bg-slate-800/60'
                 : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/30'
@@ -214,7 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-slate-900 animate-ping sm:hidden" />
               )}
             </div>
-            <span className="hidden sm:inline">Katalog Barang</span>
+            <span className="hidden sm:inline">Katalog</span>
             {lowStockCount > 0 && (
               <span
                 className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold leading-none shadow-xs flex items-center gap-0.5"
@@ -229,7 +265,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('archives')}
-            className={`py-2 px-1 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
+            className={`py-2 px-1 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
               activeTab === 'archives'
                 ? 'text-indigo-400 border-indigo-500 bg-slate-800/60'
                 : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/30'
@@ -238,14 +274,46 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Buku Kas & Riwayat Arsip"
           >
             <Archive className="w-5 h-5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="hidden sm:inline">Buku Kas & Arsip</span>
+            <span className="hidden sm:inline">Buku Kas</span>
           </button>
 
-          {/* Tab 4: Petunjuk Fitur Masa Depan */}
+          {/* Tab 4: Analisis Penjualan & Performa (TAB BARU) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('analytics')}
+            className={`py-2 px-1 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
+              activeTab === 'analytics'
+                ? 'text-indigo-400 border-indigo-500 bg-slate-800/60'
+                : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/30'
+            }`}
+            title="Model Analisis Penjualan & Kebiasaan Pelanggan"
+            aria-label="Analisis Penjualan"
+          >
+            <TrendingUp className="w-5 h-5 sm:w-4 sm:h-4 shrink-0 text-emerald-400" />
+            <span className="hidden sm:inline">Analisis</span>
+          </button>
+
+          {/* Tab 5: Kalkulator Kasir Manual (Setelah Riwayat Transaksi) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('calculator')}
+            className={`py-2 px-1 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
+              activeTab === 'calculator'
+                ? 'text-indigo-400 border-indigo-500 bg-slate-800/60'
+                : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/30'
+            }`}
+            title="Kalkulator Kasir & Hitung Manual"
+            aria-label="Kalkulator Kasir"
+          >
+            <Calculator className="w-5 h-5 sm:w-4 sm:h-4 shrink-0 text-amber-400" />
+            <span className="hidden sm:inline">Kalkulator</span>
+          </button>
+
+          {/* Tab 5: Petunjuk Fitur Masa Depan */}
           <button
             type="button"
             onClick={() => setActiveTab('guide')}
-            className={`py-2 px-1 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
+            className={`py-2 px-1 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium rounded-t-lg transition-colors cursor-pointer border-b-2 ${
               activeTab === 'guide'
                 ? 'text-indigo-400 border-indigo-500 bg-slate-800/60'
                 : 'text-slate-400 hover:text-slate-200 border-transparent hover:bg-slate-800/30'
@@ -254,7 +322,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Petunjuk Fitur Masa Depan"
           >
             <HelpCircle className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
-            <span className="hidden sm:inline">Petunjuk Fitur</span>
+            <span className="hidden sm:inline">Petunjuk</span>
           </button>
         </div>
       </div>

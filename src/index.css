@@ -12,38 +12,66 @@
   }
 }
 
-/* Print Stylesheet for POS Thermal Receipt Printers */
-@media print {
-  body * {
-    visibility: hidden;
-  }
+/* Hide thermal print portal in normal screen view */
+#thermal-print-container {
+  display: none !important;
+}
 
-  .no-print, header, footer, button, nav {
+/* Dedicated Print Stylesheet for Thermal Receipt Printers (58mm / 80mm) */
+@media print {
+  /* CRITICAL: Completely hide #root to remove the 3000px+ app height,
+     preventing thermal printers from spitting out 4 extra pages! */
+  #root, .no-print, header, footer, button, nav, .backdrop-blur-xs {
     display: none !important;
   }
 
-  #printable-receipt, #printable-receipt * {
-    visibility: visible !important;
-  }
-
-  #printable-receipt {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100% !important;
-    max-width: 58mm !important;
+  html, body {
     margin: 0 !important;
-    padding: 2mm !important;
+    padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
-    box-shadow: none !important;
-    border: none !important;
-    font-size: 10pt !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Display ONLY the isolated thermal print container */
+  #thermal-print-container {
+    display: block !important;
+    position: static !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    width: 58mm !important;
+    max-width: 58mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 9pt !important;
     line-height: 1.25 !important;
+    box-sizing: border-box !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+    break-after: avoid !important;
+    break-before: avoid !important;
+  }
+
+  /* 80mm roll support */
+  #thermal-print-container.print-width-80mm {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    font-size: 10pt !important;
+  }
+
+  #thermal-print-container * {
+    color: #000000 !important;
+    box-sizing: border-box !important;
   }
 
   @page {
-    margin: 0;
+    margin: 0 !important;
     size: auto;
   }
 }
+

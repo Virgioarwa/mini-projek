@@ -51,6 +51,7 @@ export interface Transaction {
   profit: number; // Keuntungan bersih konter = (sellingPrice - costPrice) + adminFee (atau fee tarik tunai)
   paymentMethod: PaymentMethod;
   notes?: string;
+  batchId?: string; // ID Batch untuk transaksi berkelompok / keranjang belanja
 }
 
 export interface DailyArchive {
