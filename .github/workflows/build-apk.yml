@@ -14,18 +14,36 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
+      - name: Siapkan konfigurasi otomatis
+        run: |
+          rm -f capacitor.config.ts
+          npm pkg set "devDependencies.esbuild=^0.28.0"
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "id.virgiocelluler.pos",
+            "appName": "Virgio Celluler",
+            "webDir": "dist",
+            "android": { "allowMixedContent": false }
+          }
+          EOF
+
       - name: Install dependency
-        run: npm ci
+        run: |
+          npm install
+          npm install "@capacitor/core@^7.4.3" "@capacitor/android@^7.4.3" "@capacitor/cli@^7.4.3"
 
       - name: Build web
         run: npm run build
+
+      - name: Tambah platform Android jika belum ada
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
 
       - name: Sync ke Android
         run: npx cap sync android
