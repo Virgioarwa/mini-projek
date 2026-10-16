@@ -17,14 +17,6 @@ import { ManualCalculator } from './components/ManualCalculator';
 import { EditTransactionModal } from './components/EditTransactionModal';
 import { FinancialGuideModal } from './components/FinancialGuideModal';
 import { SalesAnalyticsTab } from './components/SalesAnalyticsTab';
-import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
-import { User } from 'firebase/auth';
-import {
-  initAuth,
-  uploadBackupToDrive,
-  findOrCreateSpreadsheet,
-  syncDataToGoogleSpreadsheet,
-} from './utils/googleWorkspace';
 import {
   Product,
   Transaction,
@@ -85,27 +77,6 @@ export default function App() {
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Google Cloud & Workspace Sync
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isGoogleSyncModalOpen, setIsGoogleSyncModalOpen] = useState(false);
-  const [lastBackupTime, setLastBackupTime] = useState<string | null>(null);
-
-  // Initialize Firebase Auth state listener
-  useEffect(() => {
-    const unsubscribe = initAuth(
-      (user, token) => {
-        setCurrentUser(user);
-        setAccessToken(token);
-      },
-      () => {
-        setCurrentUser(null);
-        setAccessToken(null);
-      }
-    );
-    return () => unsubscribe();
-  }, []);
 
   // Theme state with system preference auto-detection
   const [theme, setTheme] = useState<'system' | 'dark' | 'light'>(() => {
@@ -227,62 +198,15 @@ export default function App() {
     return products.filter((p) => p.isActive && p.stock !== undefined && p.stock < 5).length;
   }, [products]);
 
-  // Otomatis cadangkan data transaksi ke Google Drive & Google Spreadsheet di background
-  const triggerBackgroundCloudSync = useCallback(
-    async (
-      updatedTransactions: Transaction[],
-      updatedArchives: DailyArchive[],
-      updatedProducts: Product[],
-      currentSession: ActiveSession,
-      currentSettings: StoreSettings
-    ) => {
-      if (!accessToken || !currentUser) return;
-      const autoTrxEnabled = localStorage.getItem('virgio_auto_sync_trx') !== 'false';
-      if (!autoTrxEnabled) return;
-
-      try {
-        // 1. Cadangkan ke Google Drive
-        const backupData = {
-          storeSettings: currentSettings,
-          products: updatedProducts,
-          activeTransactions: updatedTransactions,
-          dailyArchives: updatedArchives,
-          activeSession: currentSession,
-          exportDate: new Date().toISOString(),
-          appName: 'Virgio Celluler POS',
-          appVersion: '1.0.0',
-        };
-        const driveRes = await uploadBackupToDrive(accessToken, backupData);
-        if (driveRes.modifiedTime) {
-          setLastBackupTime(new Date(driveRes.modifiedTime).toLocaleString('id-ID'));
-        }
-
-        // 2. Sinkronkan ke Google Spreadsheet
-        const sheet = await findOrCreateSpreadsheet(accessToken);
-        await syncDataToGoogleSpreadsheet(accessToken, sheet.id, {
-          activeTransactions: updatedTransactions,
-          dailyArchives: updatedArchives,
-          products: updatedProducts,
-          sessionDate: currentSession.date,
-          settings: currentSettings,
-        });
-      } catch (err) {
-        console.warn('Auto-sync background notice:', err);
-      }
-    },
-    [accessToken, currentUser]
-  );
-
   // Save new transaction
   const handleSaveTransaction = (newTrx: Transaction, shouldPrint: boolean) => {
     const updated = [newTrx, ...transactions];
     setTransactions(updated);
     saveActiveTransactions(updated);
 
-    let updatedProducts = products;
     // If product has stock, decrement it
     if (newTrx.productId) {
-      updatedProducts = products.map((p) => {
+      const updatedProducts = products.map((p) => {
         if (p.id === newTrx.productId && p.stock !== undefined && p.stock > 0) {
           return { ...p, stock: p.stock - 1 };
         }
@@ -291,9 +215,6 @@ export default function App() {
       setProducts(updatedProducts);
       saveProducts(updatedProducts);
     }
-
-    // Auto-sync ke Google Drive & Google Spreadsheet
-    triggerBackgroundCloudSync(updated, archives, updatedProducts, session, settings);
 
     // Gentle confetti celebration for transactions > 50k
     if (newTrx.totalAmount >= 50000) {
@@ -345,9 +266,6 @@ export default function App() {
       setProducts(finalProducts);
       saveProducts(finalProducts);
     }
-
-    // Auto-sync batch ke Google Drive & Google Spreadsheet
-    triggerBackgroundCloudSync(updated, archives, finalProducts, session, settings);
 
     const batchTotal = batchTrxs.reduce((sum, t) => sum + t.totalAmount, 0);
     if (batchTotal >= 50000) {
@@ -462,11 +380,8 @@ export default function App() {
     setTransactions([]);
     setSession(newSession);
 
-    // Auto-sync closing book ke Google Drive & Sheets
-    triggerBackgroundCloudSync([], updatedArchives, products, newSession, settings);
-
     showToast(
-      `Buku kas harian ${archive.date} berhasil ditutup! Data tersimpan di Riwayat Arsip & Google Drive/Sheets.`
+      `Buku kas harian ${archive.date} berhasil ditutup! Data tersimpan di Riwayat Arsip.`
     );
   };
 
@@ -536,9 +451,6 @@ export default function App() {
         onOpenNewTransaction={() => setIsNewTrxModalOpen(true)}
         onOpenCloseDayModal={() => setIsCloseDayModalOpen(true)}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onOpenGoogleSync={() => setIsGoogleSyncModalOpen(true)}
-        isGoogleConnected={Boolean(currentUser)}
-        googleUserEmail={currentUser?.email || undefined}
         todayTransactionCount={transactions.length}
         lowStockCount={lowStockCount}
         theme={theme}
@@ -724,27 +636,6 @@ export default function App() {
         settings={settings}
         onSaveSettings={handleSaveSettings}
         onDataImported={handleDataImported}
-        onOpenGoogleSync={() => setIsGoogleSyncModalOpen(true)}
-      />
-
-      {/* 4b. Modal Cadangan Google Drive & Google Spreadsheet */}
-      <GoogleDriveSyncModal
-        isOpen={isGoogleSyncModalOpen}
-        onClose={() => setIsGoogleSyncModalOpen(false)}
-        currentUser={currentUser}
-        accessToken={accessToken}
-        onAuthSuccess={(user, token) => {
-          setCurrentUser(user);
-          setAccessToken(token);
-        }}
-        onAuthLogout={() => {
-          setCurrentUser(null);
-          setAccessToken(null);
-        }}
-        onDataRestored={handleDataImported}
-        settings={settings}
-        lastBackupTime={lastBackupTime}
-        setLastBackupTime={setLastBackupTime}
       />
 
       {/* 5. Modal Edit Modal Awal Kasir */}
