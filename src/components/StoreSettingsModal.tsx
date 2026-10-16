@@ -13,7 +13,6 @@ import {
   FileText,
   Check,
   ShieldCheck,
-  Cloud,
 } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { formatRupiah } from '../utils/formatters';
@@ -25,7 +24,6 @@ interface StoreSettingsModalProps {
   settings: StoreSettings;
   onSaveSettings: (settings: StoreSettings) => void;
   onDataImported: () => void;
-  onOpenGoogleSync?: () => void;
 }
 
 export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
@@ -34,7 +32,6 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
   settings,
   onSaveSettings,
   onDataImported,
-  onOpenGoogleSync,
 }) => {
   const [storeName, setStoreName] = useState(settings.storeName || 'Virgio Celluler');
   const [tagline, setTagline] = useState(settings.tagline || '');
@@ -298,13 +295,19 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
           {/* Cadangan & Pulihkan Database */}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Cadangkan & Pulihkan Data (Backup & Restore)</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Cadangan & Pulihkan Data Lokal (100% Offline & Aman)</span>
             </h4>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+              <div className="flex items-start gap-2 text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1 shrink-0" />
+                <p>
+                  <strong>Penyimpanan Lokal Mandiri:</strong> Seluruh data transaksi, buku kas harian, dan katalog produk tersimpan secara lokal di memori perangkat ini. Tidak membutuhkan internet ataupun akun cloud pihak ketiga.
+                </p>
+              </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Unduh file cadangan data lengkap (katalog produk, transaksi aktif, riwayat tutup buku harian, pengaturan) untuk disimpan di komputer/HP atau dipindahkan ke perangkat kasir lain.
+                Unduh file cadangan data lengkap (.json) secara berkala untuk disimpan di komputer/HP atau dipindahkan ke perangkat kasir lain.
               </p>
 
               <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -327,20 +330,6 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
                     className="hidden"
                   />
                 </label>
-
-                {onOpenGoogleSync && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenGoogleSync();
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Cloud className="w-3.5 h-3.5 text-blue-500" />
-                    <span>Cadangan Google Drive & Sheets</span>
-                  </button>
-                )}
               </div>
 
               {importStatus && (

@@ -12,7 +12,6 @@ import {
   Lock,
   Calculator,
   TrendingUp,
-  Cloud,
 } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -25,9 +24,6 @@ interface HeaderProps {
   onOpenNewTransaction: () => void;
   onOpenCloseDayModal: () => void;
   onOpenSettings: () => void;
-  onOpenGoogleSync?: () => void;
-  isGoogleConnected?: boolean;
-  googleUserEmail?: string;
   todayTransactionCount: number;
   lowStockCount?: number;
   theme?: 'system' | 'dark' | 'light';
@@ -42,9 +38,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewTransaction,
   onOpenCloseDayModal,
   onOpenSettings,
-  onOpenGoogleSync,
-  isGoogleConnected,
-  googleUserEmail,
   todayTransactionCount,
   lowStockCount = 0,
   theme,
@@ -84,7 +77,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, [settings.autoCloseHour]);
 
   return (
-    <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md pt-safe">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* BARIS 1: Header Atas - Kiri: Logo Toko | Kanan: Jam, Tutup Kasir Manual, Pengaturan, Tema */}
         <div className="flex items-center justify-between py-2.5 sm:py-3.5 gap-2">
@@ -146,33 +139,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Settings className="w-4 h-4" />
             </button>
-
-            {/* Cadangan Google Drive & Spreadsheet */}
-            {onOpenGoogleSync && (
-              <button
-                type="button"
-                onClick={onOpenGoogleSync}
-                className={`flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-lg border font-medium text-xs transition-all active:scale-95 cursor-pointer ${
-                  isGoogleConnected
-                    ? 'bg-blue-950/70 border-blue-500/50 text-blue-300 hover:bg-blue-900/60'
-                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
-                }`}
-                title={
-                  isGoogleConnected
-                    ? `Google Drive & Spreadsheet Aktif (${googleUserEmail || ''})`
-                    : 'Cadangkan ke Google Drive & Spreadsheet'
-                }
-                aria-label="Cadangan Cloud Google Drive"
-              >
-                <Cloud className={`w-4 h-4 ${isGoogleConnected ? 'text-blue-400' : 'text-slate-400'}`} />
-                <span className="hidden sm:inline">
-                  {isGoogleConnected ? 'Google Cloud' : 'Cadangan'}
-                </span>
-                {isGoogleConnected && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                )}
-              </button>
-            )}
 
             {/* Tombol Install App / APK */}
             <PWAInstallButton />
