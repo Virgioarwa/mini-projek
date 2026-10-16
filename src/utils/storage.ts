@@ -1,6 +1,7 @@
 import { Product, Transaction, DailyArchive, StoreSettings } from '../types';
 import { DEFAULT_PRODUCTS } from '../data/defaultProducts';
 import { getTodayDateString } from './formatters';
+import { downloadOrShareBlob } from './fileDownloader';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'virgio_celluler_products',
@@ -252,8 +253,8 @@ export function checkAndAutoArchiveIfDue(): { didArchive: boolean; archive?: Dai
 }
 
 // Backup & Restore Database
-export function exportAllDataBackup(): void {
-  const data = {
+export function getBackupDataPackage(): any {
+  return {
     storeSettings: getStoredSettings(),
     products: getStoredProducts(),
     activeTransactions: getActiveTransactions(),
@@ -263,24 +264,29 @@ export function exportAllDataBackup(): void {
     appVersion: '1.0.0',
     appName: 'Virgio Celluler POS',
   };
+}
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `Virgio_Celluler_Backup_${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+export function getBackupJSONString(): string {
+  const data = getBackupDataPackage();
+  return JSON.stringify(data, null, 2);
+}
+
+export async function exportAllDataBackup(): Promise<{ success: boolean; method: string; message?: string }> {
+  const jsonStr = getBackupJSONString();
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const fileName = `Virgio_Celluler_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+  return await downloadOrShareBlob(blob, fileName, 'Cadangan Data Virgio Celluler', 'application/json');
 }
 
 export function importDataBackup(jsonString: string): boolean {
   try {
     const parsed = JSON.parse(jsonString);
-    if (parsed.products) saveProducts(parsed.products);
-    if (parsed.storeSettings) saveSettings(parsed.storeSettings);
-    if (parsed.dailyArchives) saveDailyArchives(parsed.dailyArchives);
-    if (parsed.activeTransactions) saveActiveTransactions(parsed.activeTransactions);
-    if (parsed.activeSession) saveActiveSession(parsed.activeSession);
+    if (!parsed || typeof parsed !== 'object') return false;
+    if (parsed.products && Array.isArray(parsed.products)) saveProducts(parsed.products);
+    if (parsed.storeSettings && typeof parsed.storeSettings === 'object') saveSettings(parsed.storeSettings);
+    if (parsed.dailyArchives && Array.isArray(parsed.dailyArchives)) saveDailyArchives(parsed.dailyArchives);
+    if (parsed.activeTransactions && Array.isArray(parsed.activeTransactions)) saveActiveTransactions(parsed.activeTransactions);
+    if (parsed.activeSession && typeof parsed.activeSession === 'object') saveActiveSession(parsed.activeSession);
     return true;
   } catch (err) {
     console.error('Failed to import backup:', err);

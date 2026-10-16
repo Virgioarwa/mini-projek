@@ -1,8 +1,9 @@
 import * as XLSX from 'xlsx';
 import { Transaction, DailyArchive } from '../types';
 import { CATEGORY_INFO, formatDateTimeIndo } from './formatters';
+import { downloadOrShareBlob } from './fileDownloader';
 
-export function exportTransactionsToExcel(
+export async function exportTransactionsToExcel(
   transactions: Transaction[],
   fileNamePrefix: string = 'Virgio_Celluler_Transaksi'
 ) {
@@ -90,10 +91,21 @@ export function exportTransactionsToExcel(
   const dateStr = now.toISOString().slice(0, 10);
   const fullFileName = `${fileNamePrefix}_${dateStr}.xlsx`;
 
-  XLSX.writeFile(wb, fullFileName);
+  // Write as array buffer blob for universal download & Android WebView share
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  await downloadOrShareBlob(
+    blob,
+    fullFileName,
+    'Laporan Transaksi Excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
 }
 
-export function exportTransactionsToCSV(
+export async function exportTransactionsToCSV(
   transactions: Transaction[],
   fileNamePrefix: string = 'Virgio_Celluler_Transaksi'
 ) {
@@ -139,20 +151,15 @@ export function exportTransactionsToCSV(
   ]);
 
   const csvContent =
-    'data:text/csv;charset=utf-8,\uFEFF' +
+    '\uFEFF' +
     [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
 
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
   const now = new Date().toISOString().slice(0, 10);
-  link.setAttribute('download', `${fileNamePrefix}_${now}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  await downloadOrShareBlob(blob, `${fileNamePrefix}_${now}.csv`, 'Laporan Transaksi CSV', 'text/csv');
 }
 
-export function exportArchiveListToExcel(archives: DailyArchive[]) {
+export async function exportArchiveListToExcel(archives: DailyArchive[]) {
   if (!archives || archives.length === 0) {
     alert('Belum ada arsip harian untuk diekspor.');
     return;
@@ -176,5 +183,17 @@ export function exportArchiveListToExcel(archives: DailyArchive[]) {
   XLSX.utils.book_append_sheet(wb, ws, 'Rekapitulasi Harian');
 
   const now = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `Virgio_Celluler_Rekap_Harian_${now}.xlsx`);
+  const fullFileName = `Virgio_Celluler_Rekap_Harian_${now}.xlsx`;
+
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  await downloadOrShareBlob(
+    blob,
+    fullFileName,
+    'Rekapitulasi Harian Excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
 }
