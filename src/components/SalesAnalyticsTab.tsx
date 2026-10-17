@@ -68,6 +68,19 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
   const [rankMode, setRankMode] = useState<ProductRankMode>('quantity');
   // Visual Chart Metric for 7 Days Trend
   const [trendMetric, setTrendMetric] = useState<'revenue' | 'profit' | 'both'>('both');
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+
+  const handleExportExcel = async (trxs: Transaction[], filePrefix: string) => {
+    setExportStatus('Menyiapkan file Excel analisis...');
+    try {
+      const res = await exportTransactionsToExcel(trxs, filePrefix);
+      setExportStatus(res?.message || 'File Excel siap!');
+    } catch (e: any) {
+      setExportStatus('Gagal mengekspor Excel.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 4000);
+    }
+  };
 
   // Combine all transactions (historical archives + today's active transactions)
   const allHistoricalTransactions = useMemo(() => {
@@ -474,15 +487,22 @@ export const SalesAnalyticsTab: React.FC<SalesAnalyticsTabProps> = ({
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={() => exportTransactionsToExcel(filteredTransactions, `Laporan-Analisis-${period}`)}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
-              title="Download Data Terfilter ke Excel"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span className="hidden sm:inline">Export Excel</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {exportStatus && (
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/40 inline-flex items-center gap-1.5 animate-in fade-in">
+                  {exportStatus}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => handleExportExcel(filteredTransactions, `Laporan-Analisis-${period}`)}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                title="Download Data Terfilter ke Excel"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="hidden sm:inline">Export Excel</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -6,39 +6,58 @@ import { downloadOrShareBlob } from './fileDownloader';
 export async function exportTransactionsToExcel(
   transactions: Transaction[],
   fileNamePrefix: string = 'Virgio_Celluler_Transaksi'
-) {
-  if (!transactions || transactions.length === 0) {
-    alert('Tidak ada transaksi untuk diekspor.');
-    return;
-  }
+): Promise<{ success: boolean; message?: string }> {
+  const safeList = transactions || [];
 
-  // Row mapping
-  const rows = transactions.map((t, idx) => ({
-    No: idx + 1,
-    'No. Struk': t.receiptNumber,
-    'Waktu Transaksi': formatDateTimeIndo(t.timestamp),
-    Kategori: CATEGORY_INFO[t.category]?.label || t.category,
-    'Nama Produk / Layanan': t.productName,
-    'No. Tujuan / Rek / Meter': t.targetNumber || '-',
-    'Nama Pelanggan': t.customerName || 'Umum',
-    'Arus Kas': t.cashFlow === 'pemasukan' ? 'Pemasukan (Cash IN)' : 'Pengeluaran / Tarik Tunai (Cash OUT)',
-    'Harga Modal (Rp)': t.costPrice,
-    'Harga Jual (Rp)': t.sellingPrice,
-    'Biaya Admin (Rp)': t.adminFee,
-    'Total Nominal (Rp)': t.totalAmount,
-    'Uang Diterima / Bayar (Rp)': t.cashGiven || t.totalAmount,
-    'Kembalian (Rp)': t.cashChange || 0,
-    'Keuntungan Bersih (Rp)': t.profit,
-    'Metode Bayar': t.paymentMethod.toUpperCase(),
-    Catatan: t.notes || '-',
-  }));
+  // Row mapping (or placeholder row if empty)
+  const rows = safeList.length > 0
+    ? safeList.map((t, idx) => ({
+        No: idx + 1,
+        'No. Struk': t.receiptNumber,
+        'Waktu Transaksi': formatDateTimeIndo(t.timestamp),
+        Kategori: CATEGORY_INFO[t.category]?.label || t.category,
+        'Nama Produk / Layanan': t.productName,
+        'No. Tujuan / Rek / Meter': t.targetNumber || '-',
+        'Nama Pelanggan': t.customerName || 'Umum',
+        'Arus Kas': t.cashFlow === 'pemasukan' ? 'Pemasukan (Cash IN)' : 'Pengeluaran / Tarik Tunai (Cash OUT)',
+        'Harga Modal (Rp)': t.costPrice,
+        'Harga Jual (Rp)': t.sellingPrice,
+        'Biaya Admin (Rp)': t.adminFee,
+        'Total Nominal (Rp)': t.totalAmount,
+        'Uang Diterima / Bayar (Rp)': t.cashGiven || t.totalAmount,
+        'Kembalian (Rp)': t.cashChange || 0,
+        'Keuntungan Bersih (Rp)': t.profit,
+        'Metode Bayar': t.paymentMethod.toUpperCase(),
+        Catatan: t.notes || '-',
+      }))
+    : [
+        {
+          No: 1,
+          'No. Struk': '-',
+          'Waktu Transaksi': 'Belum ada transaksi',
+          Kategori: '-',
+          'Nama Produk / Layanan': '-',
+          'No. Tujuan / Rek / Meter': '-',
+          'Nama Pelanggan': '-',
+          'Arus Kas': '-',
+          'Harga Modal (Rp)': 0,
+          'Harga Jual (Rp)': 0,
+          'Biaya Admin (Rp)': 0,
+          'Total Nominal (Rp)': 0,
+          'Uang Diterima / Bayar (Rp)': 0,
+          'Kembalian (Rp)': 0,
+          'Keuntungan Bersih (Rp)': 0,
+          'Metode Bayar': '-',
+          Catatan: 'Belum ada transaksi pada periode ini',
+        },
+      ];
 
   // Calculate totals
   let totalIncome = 0;
   let totalExpense = 0;
   let totalProfit = 0;
 
-  transactions.forEach((t) => {
+  safeList.forEach((t) => {
     if (t.cashFlow === 'pemasukan') {
       totalIncome += t.totalAmount;
     } else {
@@ -58,7 +77,7 @@ export async function exportTransactionsToExcel(
     {
       No: 'RINGKASAN LAPORAN KASIR',
       'No. Struk': 'VIRGIO CELLULER',
-      'Waktu Transaksi': `Total Transaksi: ${transactions.length}`,
+      'Waktu Transaksi': `Total Transaksi: ${safeList.length}`,
     },
     {
       No: 'Total Pemasukan (Cash In)',
@@ -97,7 +116,7 @@ export async function exportTransactionsToExcel(
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  await downloadOrShareBlob(
+  return await downloadOrShareBlob(
     blob,
     fullFileName,
     'Laporan Transaksi Excel',
@@ -108,11 +127,8 @@ export async function exportTransactionsToExcel(
 export async function exportTransactionsToCSV(
   transactions: Transaction[],
   fileNamePrefix: string = 'Virgio_Celluler_Transaksi'
-) {
-  if (!transactions || transactions.length === 0) {
-    alert('Tidak ada transaksi untuk diekspor.');
-    return;
-  }
+): Promise<{ success: boolean; message?: string }> {
+  const safeList = transactions || [];
 
   const headers = [
     'No',
@@ -132,23 +148,43 @@ export async function exportTransactionsToCSV(
     'Catatan',
   ];
 
-  const rows = transactions.map((t, idx) => [
-    idx + 1,
-    `"${t.receiptNumber}"`,
-    `"${formatDateTimeIndo(t.timestamp)}"`,
-    `"${CATEGORY_INFO[t.category]?.label || t.category}"`,
-    `"${t.productName.replace(/"/g, '""')}"`,
-    `"${t.targetNumber || '-'}"`,
-    `"${(t.customerName || 'Umum').replace(/"/g, '""')}"`,
-    `"${t.cashFlow}"`,
-    t.costPrice,
-    t.sellingPrice,
-    t.adminFee,
-    t.totalAmount,
-    t.profit,
-    `"${t.paymentMethod}"`,
-    `"${(t.notes || '-').replace(/"/g, '""')}"`,
-  ]);
+  const rows = safeList.length > 0
+    ? safeList.map((t, idx) => [
+        idx + 1,
+        `"${t.receiptNumber}"`,
+        `"${formatDateTimeIndo(t.timestamp)}"`,
+        `"${CATEGORY_INFO[t.category]?.label || t.category}"`,
+        `"${t.productName.replace(/"/g, '""')}"`,
+        `"${t.targetNumber || '-'}"`,
+        `"${(t.customerName || 'Umum').replace(/"/g, '""')}"`,
+        `"${t.cashFlow}"`,
+        t.costPrice,
+        t.sellingPrice,
+        t.adminFee,
+        t.totalAmount,
+        t.profit,
+        `"${t.paymentMethod}"`,
+        `"${(t.notes || '-').replace(/"/g, '""')}"`,
+      ])
+    : [
+        [
+          1,
+          '"-"',
+          '"Belum ada transaksi"',
+          '"-"',
+          '"-"',
+          '"-"',
+          '"-"',
+          '"-"',
+          0,
+          0,
+          0,
+          0,
+          0,
+          '"-"',
+          '"Belum ada data"',
+        ],
+      ];
 
   const csvContent =
     '\uFEFF' +
@@ -156,27 +192,41 @@ export async function exportTransactionsToCSV(
 
   const now = new Date().toISOString().slice(0, 10);
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  await downloadOrShareBlob(blob, `${fileNamePrefix}_${now}.csv`, 'Laporan Transaksi CSV', 'text/csv');
+  return await downloadOrShareBlob(blob, `${fileNamePrefix}_${now}.csv`, 'Laporan Transaksi CSV', 'text/csv');
 }
 
-export async function exportArchiveListToExcel(archives: DailyArchive[]) {
-  if (!archives || archives.length === 0) {
-    alert('Belum ada arsip harian untuk diekspor.');
-    return;
-  }
+export async function exportArchiveListToExcel(
+  archives: DailyArchive[]
+): Promise<{ success: boolean; message?: string }> {
+  const safeList = archives || [];
 
-  const rows = archives.map((a, idx) => ({
-    No: idx + 1,
-    Tanggal: a.date,
-    'Waktu Tutup Buku': formatDateTimeIndo(a.closedAt),
-    'Saldo Awal (Rp)': a.initialCash,
-    'Total Pemasukan (Rp)': a.totalIncome,
-    'Total Pengeluaran/Tarik Tunai (Rp)': a.totalExpense,
-    'Saldo Akhir Kas (Rp)': a.netCash,
-    'Total Keuntungan (Rp)': a.totalProfit,
-    'Jumlah Transaksi': a.transactionCount,
-    Catatan: a.note || '-',
-  }));
+  const rows = safeList.length > 0
+    ? safeList.map((a, idx) => ({
+        No: idx + 1,
+        Tanggal: a.date,
+        'Waktu Tutup Buku': formatDateTimeIndo(a.closedAt),
+        'Saldo Awal (Rp)': a.initialCash,
+        'Total Pemasukan (Rp)': a.totalIncome,
+        'Total Pengeluaran/Tarik Tunai (Rp)': a.totalExpense,
+        'Saldo Akhir Kas (Rp)': a.netCash,
+        'Total Keuntungan (Rp)': a.totalProfit,
+        'Jumlah Transaksi': a.transactionCount,
+        Catatan: a.note || '-',
+      }))
+    : [
+        {
+          No: 1,
+          Tanggal: new Date().toISOString().slice(0, 10),
+          'Waktu Tutup Buku': 'Belum ada arsip',
+          'Saldo Awal (Rp)': 0,
+          'Total Pemasukan (Rp)': 0,
+          'Total Pengeluaran/Tarik Tunai (Rp)': 0,
+          'Saldo Akhir Kas (Rp)': 0,
+          'Total Keuntungan (Rp)': 0,
+          'Jumlah Transaksi': 0,
+          Catatan: 'Belum ada arsip tutup buku harian',
+        },
+      ];
 
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
@@ -190,7 +240,7 @@ export async function exportArchiveListToExcel(archives: DailyArchive[]) {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
 
-  await downloadOrShareBlob(
+  return await downloadOrShareBlob(
     blob,
     fullFileName,
     'Rekapitulasi Harian Excel',

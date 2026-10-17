@@ -252,6 +252,19 @@ export function checkAndAutoArchiveIfDue(): { didArchive: boolean; archive?: Dai
   return { didArchive: false };
 }
 
+// Helper to get all transactions (active + all historical archives)
+export function getAllTransactionsCombined(): Transaction[] {
+  const active = getActiveTransactions();
+  const archives = getDailyArchives();
+  const list: Transaction[] = [...active];
+  archives.forEach((a) => {
+    if (a.transactions && Array.isArray(a.transactions)) {
+      list.push(...a.transactions);
+    }
+  });
+  return list;
+}
+
 // Backup & Restore Database
 export function getBackupDataPackage(): any {
   return {

@@ -21,6 +21,7 @@ import {
   AlertCircle,
   RefreshCw,
   FileCode,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { StoreSettings } from '../types';
 import { formatRupiah } from '../utils/formatters';
@@ -28,8 +29,10 @@ import {
   exportAllDataBackup,
   importDataBackup,
   getBackupJSONString,
+  getAllTransactionsCombined,
 } from '../utils/storage';
 import { copyTextToClipboard } from '../utils/fileDownloader';
+import { exportTransactionsToExcel } from '../utils/excelExport';
 
 interface StoreSettingsModalProps {
   isOpen: boolean;
@@ -120,6 +123,22 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
     } catch (err) {
       setShowRawJSON(true);
     } finally {
+      setTimeout(() => setExportMessage(null), 6000);
+    }
+  };
+
+  // 2b. Ekspor seluruh riwayat transaksi ke Excel (.xlsx)
+  const handleExportAllExcel = async () => {
+    setIsExporting(true);
+    setExportMessage('Menyiapkan file Excel seluruh transaksi...');
+    try {
+      const allTrxs = getAllTransactionsCombined();
+      const res = await exportTransactionsToExcel(allTrxs, 'Virgio_Celluler_Semua_Transaksi');
+      setExportMessage(res?.message || '✅ File Excel berhasil disiapkan!');
+    } catch (err: any) {
+      setExportMessage('⚠️ Gagal menyiapkan file Excel.');
+    } finally {
+      setIsExporting(false);
       setTimeout(() => setExportMessage(null), 6000);
     }
   };
@@ -404,6 +423,18 @@ export const StoreSettingsModal: React.FC<StoreSettingsModalProps> = ({
                       <Share2 className="w-3.5 h-3.5" />
                     )}
                     <span>Simpan / Bagikan File (.json)</span>
+                  </button>
+
+                  {/* Tombol 1b: Ekspor Seluruh Transaksi ke Excel */}
+                  <button
+                    type="button"
+                    disabled={isExporting}
+                    onClick={handleExportAllExcel}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50"
+                    title="Simpan atau bagikan laporan seluruh transaksi ke format Excel (.xlsx)"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>Ekspor Excel (.xlsx)</span>
                   </button>
 
                   {/* Tombol 2: Salin ke Clipboard (100% Works in any offline APK) */}

@@ -1,13 +1,29 @@
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+
 /**
  * Universal File Downloader & Native Share Helper
  * Mendukung Browser Standar, PWA, dan Android APK (Capacitor / WebView).
  *
  * Pada Android WebView / APK offline, tautan <a download="blob:..."> sering diabaikan
  * tanpa respon karena WebView tidak memiliki DownloadListener bawaan.
- * Helper ini memprioritaskan Web Share API (navigator.share dengan File),
- * sehingga memunculkan lembar simpan/berbagi Android ("Simpan ke Perangkat / File Manager / Drive / WA"),
- * serta menyediakan fallback clipboard dan tautan unduhan standar.
+ * Helper ini memprioritaskan Native Capacitor Filesystem + Share di Android APK,
+ * lalu Web Share API, dan fallback ke tautan unduhan standar / clipboard.
  */
+
+export function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+      resolve(base64);
+    };
+    reader.readAsDataURL(blob);
+  });
+}
 
 export async function downloadOrShareBlob(
   blob: Blob,
@@ -15,7 +31,40 @@ export async function downloadOrShareBlob(
   title: string = 'Unduh File',
   mimeType: string = 'application/octet-stream'
 ): Promise<{ success: boolean; method: 'share' | 'download' | 'data-uri' | 'cancelled' | 'error'; message?: string }> {
-  // 1. Coba gunakan Web Share API jika didukung untuk file (Sangat ampuh di Android APK & Mobile)
+  // 1. NATIVE ANDROID / IOS PLATFORM (CAPACITOR APK)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const base64Data = await blobToBase64(blob);
+
+      // Simpan berkas ke direktori Cache aplikasi agar memiliki FileProvider content:// URI
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Cache,
+      });
+
+      // Buka Native Android Intent Chooser / Share Sheet
+      await Share.share({
+        title: title || fileName,
+        text: `File ${fileName} dari Kasir Virgio Celluler`,
+        url: savedFile.uri,
+        dialogTitle: 'Simpan atau Bagikan File',
+      });
+
+      return {
+        success: true,
+        method: 'share',
+        message: 'Dialog penyimpanan berkas Android berhasil dibuka. Silakan pilih Simpan ke File, Drive, atau WhatsApp.',
+      };
+    } catch (err: any) {
+      if (err?.name === 'AbortError' || err?.message?.toLowerCase().includes('cancel')) {
+        return { success: true, method: 'cancelled', message: 'Penyimpanan berkas dibatalkan.' };
+      }
+      console.warn('Capacitor native share failed, falling back to Web API:', err);
+    }
+  }
+
+  // 2. WEB SHARE API (Mobile Web, Chrome Android, Safari iOS)
   if (typeof navigator !== 'undefined' && navigator.canShare && typeof File !== 'undefined') {
     try {
       const file = new File([blob], fileName, { type: mimeType });
@@ -28,15 +77,14 @@ export async function downloadOrShareBlob(
         return { success: true, method: 'share', message: 'File berhasil dibagikan / disimpan!' };
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        // Pengguna membatalkan dialog share Android
+      if (err?.name === 'AbortError') {
         return { success: true, method: 'cancelled', message: 'Penyimpanan file dibatalkan.' };
       }
       console.warn('navigator.share failed, fallback to anchor download:', err);
     }
   }
 
-  // 2. Fallback untuk Desktop Browser & PWA: Standar anchor <a download>
+  // 3. DESKTOP BROWSER ANCHOR DOWNLOAD
   try {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -55,26 +103,17 @@ export async function downloadOrShareBlob(
     console.warn('Anchor blob download failed, trying data URI fallback:', err);
   }
 
-  // 3. Fallback Data URI (Jika blob: diblokir oleh WebView)
+  // 4. DATA URI FALLBACK (Jika blob: diblokir)
   try {
-    const reader = new FileReader();
-    return new Promise((resolve) => {
-      reader.onloadend = () => {
-        try {
-          const dataUri = reader.result as string;
-          const a = document.createElement('a');
-          a.href = dataUri;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => document.body.removeChild(a), 1000);
-          resolve({ success: true, method: 'data-uri', message: `File ${fileName} siap disimpan.` });
-        } catch (e: any) {
-          resolve({ success: false, method: 'error', message: 'Gagal mengunduh file secara otomatis.' });
-        }
-      };
-      reader.readAsDataURL(blob);
-    });
+    const base64 = await blobToBase64(blob);
+    const dataUri = `data:${mimeType};base64,${base64}`;
+    const a = document.createElement('a');
+    a.href = dataUri;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 1000);
+    return { success: true, method: 'data-uri', message: `File ${fileName} siap disimpan.` };
   } catch (err: any) {
     return { success: false, method: 'error', message: err?.message || 'Gagal mengunduh file.' };
   }

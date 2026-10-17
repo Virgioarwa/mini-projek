@@ -67,6 +67,32 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     });
   }, [transactions, selectedCategory, cashFlowFilter, searchQuery]);
 
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+
+  const handleExportExcel = async () => {
+    setExportStatus('Menyiapkan file Excel...');
+    try {
+      const res = await exportTransactionsToExcel(transactions);
+      setExportStatus(res?.message || 'File Excel siap!');
+    } catch (err: any) {
+      setExportStatus('Gagal mengekspor Excel.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 4000);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setExportStatus('Menyiapkan file CSV...');
+    try {
+      const res = await exportTransactionsToCSV(transactions);
+      setExportStatus(res?.message || 'File CSV siap!');
+    } catch (err: any) {
+      setExportStatus('Gagal mengekspor CSV.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 4000);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-800/90 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-700/60 overflow-hidden">
       {/* Top Bar Filter & Export */}
@@ -83,13 +109,18 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Semua transaksi kasir sebelum reset tutup buku jam 23:00 malam
           </p>
+          {exportStatus && (
+            <div className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 inline-flex items-center gap-1.5 animate-in fade-in">
+              <span>{exportStatus}</span>
+            </div>
+          )}
         </div>
 
         {/* Action & Export buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => exportTransactionsToExcel(transactions)}
+            onClick={handleExportExcel}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold transition cursor-pointer"
             title="Download Excel Spreadsheet (.xlsx)"
           >
@@ -99,7 +130,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
           <button
             type="button"
-            onClick={() => exportTransactionsToCSV(transactions)}
+            onClick={handleExportCSV}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 text-xs font-semibold transition cursor-pointer"
             title="Download CSV file"
           >

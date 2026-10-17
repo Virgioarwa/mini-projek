@@ -45,9 +45,46 @@ export const DailyArchiveView: React.FC<DailyArchiveViewProps> = ({
   todayDate,
 }) => {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
 
   const toggleExpand = (date: string) => {
     setExpandedDate(expandedDate === date ? null : date);
+  };
+
+  const handleExportArchiveList = async () => {
+    setExportStatus('Menyiapkan rekap Excel...');
+    try {
+      const res = await exportArchiveListToExcel(archives);
+      setExportStatus(res?.message || 'Rekap Excel siap!');
+    } catch (e: any) {
+      setExportStatus('Gagal mengekspor rekap.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 4000);
+    }
+  };
+
+  const handleExportDayExcel = async (trxs: Transaction[], date: string) => {
+    setExportStatus(`Menyiapkan Excel tanggal ${date}...`);
+    try {
+      const res = await exportTransactionsToExcel(trxs, `Virgio_Celluler_Arsip_${date}`);
+      setExportStatus(res?.message || `Excel ${date} siap!`);
+    } catch (e: any) {
+      setExportStatus('Gagal mengekspor Excel.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 4000);
+    }
+  };
+
+  const handleExportDayCSV = async (trxs: Transaction[], date: string) => {
+    setExportStatus(`Menyiapkan CSV tanggal ${date}...`);
+    try {
+      const res = await exportTransactionsToCSV(trxs, `Virgio_Celluler_Arsip_${date}`);
+      setExportStatus(res?.message || `CSV ${date} siap!`);
+    } catch (e: any) {
+      setExportStatus('Gagal mengekspor CSV.');
+    } finally {
+      setTimeout(() => setExportStatus(null), 4000);
+    }
   };
 
   return (
@@ -67,12 +104,17 @@ export const DailyArchiveView: React.FC<DailyArchiveViewProps> = ({
             <p className="text-xs text-slate-300 mt-1 max-w-xl">
               Sistem otomatis menyimpan riwayat setiap jam 11 malam (23:00) dan mereset kasir untuk hari baru. Seluruh data historis tersimpan rapi dan dapat diekspor ke Excel kapan saja.
             </p>
+            {exportStatus && (
+              <div className="mt-2 text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/40 inline-flex items-center gap-1.5 animate-in fade-in">
+                <span>{exportStatus}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
-              onClick={() => exportArchiveListToExcel(archives)}
+              onClick={handleExportArchiveList}
               className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
               title="Download Seluruh Rekapitulasi Harian ke Excel"
             >
@@ -197,12 +239,7 @@ export const DailyArchiveView: React.FC<DailyArchiveViewProps> = ({
                   <div className="flex items-center gap-2 self-end lg:self-center">
                     <button
                       type="button"
-                      onClick={() =>
-                        exportTransactionsToExcel(
-                          archive.transactions,
-                          `Virgio_Celluler_Arsip_${archive.date}`
-                        )
-                      }
+                      onClick={() => handleExportDayExcel(archive.transactions, archive.date)}
                       className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-700 border border-emerald-200 dark:border-emerald-800 transition cursor-pointer"
                       title="Export Excel Transaksi Tanggal Ini"
                     >
@@ -234,12 +271,7 @@ export const DailyArchiveView: React.FC<DailyArchiveViewProps> = ({
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() =>
-                            exportTransactionsToCSV(
-                              archive.transactions,
-                              `Virgio_Celluler_Arsip_${archive.date}`
-                            )
-                          }
+                          onClick={() => handleExportDayCSV(archive.transactions, archive.date)}
                           className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 flex items-center gap-1 cursor-pointer"
                         >
                           <FileText className="w-3.5 h-3.5" />
