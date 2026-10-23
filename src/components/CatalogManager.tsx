@@ -68,6 +68,25 @@ export const CatalogManager: React.FC<CatalogManagerProps> = ({
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [isCostCustomized, setIsCostCustomized] = useState(false);
+
+  const handleSellingPriceChange = (val: number) => {
+    const prevSelling = Number(sellingPrice) || 0;
+    setSellingPrice(val);
+    if (!isCostCustomized || costPrice === 0 || costPrice === prevSelling) {
+      setCostPrice(val);
+    }
+  };
+
+  const handleCostPriceChange = (val: number) => {
+    setCostPrice(val);
+    setIsCostCustomized(val !== sellingPrice);
+  };
+
+  const handleSyncCostToSelling = () => {
+    setCostPrice(sellingPrice);
+    setIsCostCustomized(false);
+  };
 
   const openAddModal = (presetCategory?: TransactionCategory) => {
     setEditingProduct(null);
@@ -77,6 +96,7 @@ export const CatalogManager: React.FC<CatalogManagerProps> = ({
     setCostPrice(0);
     setSellingPrice(0);
     setAdminFee(presetCategory ? CATEGORY_INFO[presetCategory]?.defaultAdmin || 0 : 0);
+    setIsCostCustomized(false);
     setStock('');
     setCode('');
     setDescription('');
@@ -89,8 +109,11 @@ export const CatalogManager: React.FC<CatalogManagerProps> = ({
     setName(p.name);
     setCategory(p.category);
     setProvider(p.provider || '');
-    setCostPrice(p.costPrice || 0);
-    setSellingPrice(p.sellingPrice || 0);
+    const pCost = p.costPrice || 0;
+    const pSell = p.sellingPrice || 0;
+    setCostPrice(pCost);
+    setSellingPrice(pSell);
+    setIsCostCustomized(pCost !== pSell && pCost > 0);
     setAdminFee(p.adminFee || 0);
     setStock(p.stock !== undefined ? String(p.stock) : '');
     setCode(p.code || '');
@@ -564,34 +587,55 @@ export const CatalogManager: React.FC<CatalogManagerProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Harga Modal (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="500"
-                    value={costPrice || ''}
-                    onChange={(e) => setCostPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Harga Jual (Rp) <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Harga Jual (Rp) <span className="text-rose-500">*</span>
+                    </label>
+                  </div>
                   <input
                     type="number"
                     min="0"
                     step="500"
                     required
                     value={sellingPrice || ''}
-                    onChange={(e) => setSellingPrice(Number(e.target.value))}
+                    onChange={(e) => handleSellingPriceChange(Number(e.target.value))}
+                    placeholder="0"
                     className="w-full px-3 py-2 text-xs font-mono font-bold text-indigo-600 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Harga Modal (Rp)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSyncCostToSelling}
+                      className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      title="Samakan Modal dengan Harga Jual"
+                    >
+                      ⚡ Samakan
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500"
+                    value={costPrice || ''}
+                    onChange={(e) => handleCostPriceChange(Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <div className="mt-1 text-[10px]">
+                    {!isCostCustomized || costPrice === sellingPrice ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">⚡ Auto-Sync Aktif</span>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400">Modal kustom</span>
+                    )}
+                  </div>
                 </div>
 
                 <div>

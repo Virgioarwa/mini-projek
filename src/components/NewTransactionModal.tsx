@@ -99,55 +99,98 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const [cashGiven, setCashGiven] = useState<number>(0);
   const [notes, setNotes] = useState('');
 
+  // Auto-Sync Otomatis Cerdas: whether the user has explicitly typed a different cost price
+  const [isCostCustomized, setIsCostCustomized] = useState(false);
+
+  // Smart handler: changes selling price and auto-syncs cost price unless customized
+  const handleSellingPriceChange = (val: number) => {
+    const prevSelling = Number(sellingPrice) || 0;
+    const prevFee = Number(adminFee) || 0;
+    const prevTotal = prevSelling + prevFee;
+
+    setSellingPrice(val);
+
+    // Auto-sync cost price if not customized or was identical to previous selling price/zero
+    if (!isCostCustomized || costPrice === 0 || costPrice === prevSelling) {
+      setCostPrice(val);
+    }
+
+    if (activeCategory !== 'tarik_tunai') {
+      if (cashGiven === prevTotal || cashGiven === 0) {
+        setCashGiven(val + prevFee);
+      }
+    }
+  };
+
+  // Explicit cost price change by user
+  const handleCostPriceChange = (val: number) => {
+    setCostPrice(val);
+    // Mark customized if it differs from current selling price
+    setIsCostCustomized(val !== sellingPrice);
+  };
+
+  // One-tap force sync: Modal = Nominal
+  const handleSyncCostToSelling = () => {
+    setCostPrice(sellingPrice);
+    setIsCostCustomized(false);
+  };
+
   // Reset or preset when category changes
   useEffect(() => {
     setSelectedProductId('');
     setSearchQuery('');
+    setIsCostCustomized(false);
 
     if (activeCategory === 'tarik_tunai') {
       setCashFlow('pengeluaran');
       setProductName('Tarik Tunai Tunai / E-Wallet');
-      setCostPrice(0);
+      setCostPrice(100000);
       setSellingPrice(100000);
       setAdminFee(5000);
       setCashGiven(0);
     } else if (activeCategory === 'transfer') {
       setCashFlow('pemasukan');
       setProductName('Transfer Antar Bank');
-      setCostPrice(0);
+      setCostPrice(100000);
       setSellingPrice(100000);
       setAdminFee(5000);
       setCashGiven(105000);
     } else if (activeCategory === 'token_listrik') {
       setCashFlow('pemasukan');
       setProductName('Token Listrik PLN 20.000');
-      setCostPrice(20500);
+      setCostPrice(20000);
       setSellingPrice(20000);
       setAdminFee(2500);
-      setCashGiven(25000);
+      setCashGiven(22500);
     } else if (activeCategory === 'tagihan') {
       setCashFlow('pemasukan');
       setProductName('Bayar Tagihan Listrik / BPJS / PDAM');
-      setCostPrice(0);
+      setCostPrice(50000);
       setSellingPrice(50000);
       setAdminFee(3000);
-      setCashGiven(55000);
+      setCashGiven(53000);
     } else if (activeCategory === 'ewallet') {
       setCashFlow('pemasukan');
       setProductName('Top Up DANA Saldo');
-      setCostPrice(0);
+      setCostPrice(50000);
       setSellingPrice(50000);
       setAdminFee(3000);
-      setCashGiven(55000);
+      setCashGiven(53000);
     } else {
       setCashFlow('pemasukan');
+      setCostPrice(0);
+      setSellingPrice(0);
       setAdminFee(0);
+      setCashGiven(0);
     }
   }, [activeCategory]);
 
   useEffect(() => {
     if (isOpen && initialSellingPrice !== undefined && initialSellingPrice > 0) {
       setSellingPrice(initialSellingPrice);
+      if (!isCostCustomized || costPrice === 0) {
+        setCostPrice(initialSellingPrice);
+      }
       setCashGiven(initialSellingPrice);
     }
   }, [isOpen, initialSellingPrice]);
@@ -168,11 +211,14 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   const handleSelectProduct = (product: Product) => {
     setSelectedProductId(product.id);
     setProductName(product.name);
-    setCostPrice(product.costPrice || 0);
-    setSellingPrice(product.sellingPrice || 0);
+    const pCost = product.costPrice || 0;
+    const pSell = product.sellingPrice || 0;
+    setCostPrice(pCost);
+    setSellingPrice(pSell);
     setAdminFee(product.adminFee || 0);
+    setIsCostCustomized(pCost !== pSell && pCost > 0);
 
-    const total = (product.sellingPrice || 0) + (product.adminFee || 0);
+    const total = pSell + (product.adminFee || 0);
     setCashGiven(total);
   };
 
@@ -544,8 +590,8 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         onClick={() => setActiveCategory(cat)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border cursor-pointer ${
                           isActive
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-600/30'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/20 ring-2 ring-blue-400 dark:bg-indigo-600 dark:border-indigo-600 dark:shadow-indigo-600/30 dark:ring-indigo-500'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 hover:border-blue-400 dark:hover:border-indigo-400'
                         }`}
                       >
                         <span>{meta?.shortLabel || cat}</span>
@@ -586,8 +632,8 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                           onClick={() => handleSelectProduct(p)}
                           className={`p-2 rounded-xl text-left border transition text-xs cursor-pointer flex flex-col justify-between ${
                             isSel
-                              ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-500'
-                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-400'
+                              ? 'border-blue-600 bg-blue-50 text-blue-950 ring-2 ring-blue-500 shadow-xs dark:border-indigo-600 dark:bg-indigo-950/70 dark:text-indigo-200 dark:ring-indigo-500'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-400 dark:hover:border-indigo-400'
                           }`}
                         >
                           <div className="font-bold truncate text-slate-900 dark:text-white">
@@ -666,16 +712,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         step="1000"
                         required
                         value={sellingPrice === 0 ? '' : sellingPrice}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          setSellingPrice(val);
-                          if (
-                            cashGiven === (Number(sellingPrice) || 0) + (Number(adminFee) || 0) ||
-                            cashGiven === 0
-                          ) {
-                            setCashGiven(val + (Number(adminFee) || 0));
-                          }
-                        }}
+                        onChange={(e) => handleSellingPriceChange(Number(e.target.value))}
                         placeholder="0"
                         className="w-full pl-9 pr-3 py-2 text-base font-bold font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
@@ -686,19 +723,11 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         <button
                           key={nom}
                           type="button"
-                          onClick={() => {
-                            setSellingPrice(nom);
-                            if (
-                              cashGiven === (Number(sellingPrice) || 0) + (Number(adminFee) || 0) ||
-                              cashGiven === 0
-                            ) {
-                              setCashGiven(nom + (Number(adminFee) || 0));
-                            }
-                          }}
+                          onClick={() => handleSellingPriceChange(nom)}
                           className={`px-2 py-0.5 rounded text-xs font-mono font-medium transition cursor-pointer border ${
                             sellingPrice === nom
-                              ? 'bg-indigo-600 text-white border-indigo-700 font-bold'
-                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                              ? 'bg-blue-600 text-white border-blue-700 font-bold ring-2 ring-blue-400/40 shadow-xs dark:bg-indigo-600 dark:border-indigo-700'
+                              : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-indigo-400'
                           }`}
                         >
                           {nom >= 1000 ? `${nom / 1000}rb` : nom}
@@ -761,22 +790,69 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                   </div>
                 </div>
 
-                {/* Sub-info: Cost price & Profit */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">Harga Modal:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={costPrice || ''}
-                      onChange={(e) => setCostPrice(Number(e.target.value))}
-                      placeholder="Rp 0"
-                      className="w-28 px-2 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-slate-700 dark:text-slate-300"
-                    />
+                {/* Auto-Sync Cerdas: Cost Price & Estimasi Untung */}
+                <div className="p-3 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Harga Modal:
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1 text-xs font-bold text-slate-400">Rp</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={costPrice === 0 ? '' : costPrice}
+                          onChange={(e) => handleCostPriceChange(Number(e.target.value))}
+                          placeholder="0"
+                          className="w-28 pl-8 pr-2 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      {/* Tombol Samakan Modal dengan Nominal */}
+                      <button
+                        type="button"
+                        onClick={handleSyncCostToSelling}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 border cursor-pointer ${
+                          !isCostCustomized || costPrice === sellingPrice
+                            ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800'
+                            : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700 hover:bg-amber-200'
+                        }`}
+                        title="Klik untuk menyamakan Harga Modal dengan Nominal Produk"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Samakan dg Nominal</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      {!isCostCustomized || costPrice === sellingPrice ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                          <Check className="w-3 h-3" /> Auto-Sync Aktif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                          Modal Kustom
+                        </span>
+                      )}
+
+                      <div className="text-emerald-600 dark:text-emerald-400 font-medium ml-auto">
+                        Untung: <strong className="font-mono text-sm">+{formatRupiah(calculatedProfit)}</strong>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-emerald-600 dark:text-emerald-400 font-medium">
-                    Estimasi Untung: <strong className="font-mono text-sm">+{formatRupiah(calculatedProfit)}</strong>
-                  </div>
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>
+                      {activeCategory === 'transfer' ||
+                      activeCategory === 'tarik_tunai' ||
+                      activeCategory === 'ewallet' ||
+                      activeCategory === 'tagihan'
+                        ? 'Modal otomatis sama dengan nominal. Untung konter murni dari Biaya Admin.'
+                        : 'Modal otomatis disamakan (cukup ketik 1x). Ubah kotak di atas jika server/distributor punya harga modal berbeda.'}
+                    </span>
+                  </p>
                 </div>
               </div>
 
@@ -1002,8 +1078,8 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         onClick={() => setActiveCategory(cat)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition flex items-center gap-1.5 border cursor-pointer ${
                           isActive
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-400/50 shadow-xs dark:bg-indigo-600 dark:border-indigo-600 dark:ring-indigo-500'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-indigo-400'
                         }`}
                       >
                         <span>{meta?.shortLabel || cat}</span>
@@ -1096,7 +1172,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         min="0"
                         step="1000"
                         value={sellingPrice === 0 ? '' : sellingPrice}
-                        onChange={(e) => setSellingPrice(Number(e.target.value))}
+                        onChange={(e) => handleSellingPriceChange(Number(e.target.value))}
                         className="w-full px-3 py-1.5 text-sm font-bold font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                       />
                     </div>
@@ -1112,6 +1188,32 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         onChange={(e) => handleSetAdminFee(Number(e.target.value))}
                         className="w-full px-3 py-1.5 text-sm font-bold font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400"
                       />
+                    </div>
+                  </div>
+
+                  {/* Compact Auto-Sync for Cart */}
+                  <div className="p-2.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-500 text-[11px]">Modal:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={costPrice === 0 ? '' : costPrice}
+                        onChange={(e) => handleCostPriceChange(Number(e.target.value))}
+                        placeholder="0"
+                        className="w-24 px-2 py-0.5 text-xs font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSyncCostToSelling}
+                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100"
+                        title="Samakan Modal dg Harga"
+                      >
+                        ⚡ Samakan
+                      </button>
+                    </div>
+                    <div className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+                      Untung: +{formatRupiah(calculatedProfit)}
                     </div>
                   </div>
 

@@ -71,16 +71,51 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const [cashGiven, setCashGiven] = useState<number>(0);
   const [notes, setNotes] = useState('');
 
+  // Auto-Sync state: whether cost price was manually customized
+  const [isCostCustomized, setIsCostCustomized] = useState(false);
+
+  // Smart handler: changes selling price and auto-syncs cost price unless customized
+  const handleSellingPriceChange = (val: number) => {
+    const prevSelling = Number(sellingPrice) || 0;
+    const prevFee = Number(adminFee) || 0;
+    const prevTotal = prevSelling + prevFee;
+
+    setSellingPrice(val);
+
+    if (!isCostCustomized || costPrice === 0 || costPrice === prevSelling) {
+      setCostPrice(val);
+    }
+
+    if (category !== 'tarik_tunai') {
+      if (cashGiven === prevTotal || cashGiven === 0) {
+        setCashGiven(val + prevFee);
+      }
+    }
+  };
+
+  const handleCostPriceChange = (val: number) => {
+    setCostPrice(val);
+    setIsCostCustomized(val !== sellingPrice);
+  };
+
+  const handleSyncCostToSelling = () => {
+    setCostPrice(sellingPrice);
+    setIsCostCustomized(false);
+  };
+
   // Populate form whenever transaction changes or modal opens
   useEffect(() => {
     if (transaction) {
+      const tCost = transaction.costPrice ?? 0;
+      const tSell = transaction.sellingPrice ?? 0;
       setCategory(transaction.category || 'voucher');
       setProductName(transaction.productName || '');
       setSelectedProductId(transaction.productId || '');
       setTargetNumber(transaction.targetNumber || '');
       setCustomerName(transaction.customerName || '');
-      setCostPrice(transaction.costPrice ?? 0);
-      setSellingPrice(transaction.sellingPrice ?? 0);
+      setCostPrice(tCost);
+      setSellingPrice(tSell);
+      setIsCostCustomized(tCost !== tSell && tCost > 0);
       setAdminFee(transaction.adminFee ?? 0);
       setCashFlow(transaction.cashFlow || 'pemasukan');
       setPaymentMethod(transaction.paymentMethod || 'tunai');
@@ -97,12 +132,15 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
     const found = products.find((p) => p.id === prodId);
     if (found) {
+      const pCost = found.costPrice ?? 0;
+      const pSell = found.sellingPrice ?? 0;
       setProductName(found.name);
       setCategory(found.category);
-      if (found.costPrice !== undefined) setCostPrice(found.costPrice);
-      if (found.sellingPrice !== undefined) setSellingPrice(found.sellingPrice);
+      setCostPrice(pCost);
+      setSellingPrice(pSell);
+      setIsCostCustomized(pCost !== pSell && pCost > 0);
       if (found.adminFee !== undefined) setAdminFee(found.adminFee);
-      const newTotal = (found.sellingPrice || 0) + (found.adminFee || 0);
+      const newTotal = pSell + (found.adminFee || 0);
       setCashGiven(newTotal);
     }
   };
@@ -388,13 +426,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                   step="500"
                   required
                   value={sellingPrice || ''}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setSellingPrice(val);
-                    if (cashGiven === sellingPrice + adminFee) {
-                      setCashGiven(val + adminFee);
-                    }
-                  }}
+                  onChange={(e) => handleSellingPriceChange(Number(e.target.value))}
                   className="w-full pl-10 pr-3 py-2 text-base font-bold font-mono rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
@@ -408,14 +440,11 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                   <button
                     key={nom}
                     type="button"
-                    onClick={() => {
-                      setSellingPrice(nom);
-                      setCashGiven(nom + adminFee);
-                    }}
+                    onClick={() => handleSellingPriceChange(nom)}
                     className={`px-2 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer border ${
                       sellingPrice === nom
-                        ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'
+                        ? 'bg-blue-600 text-white border-blue-700 font-bold ring-2 ring-blue-400/40 shadow-xs dark:bg-amber-500 dark:text-slate-950 dark:border-amber-600'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-amber-400'
                     }`}
                   >
                     {nom >= 1000 ? `${nom / 1000}rb` : nom}
@@ -501,11 +530,23 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 </div>
               </div>
 
-              {/* Harga Modal / Kulak */}
+              {/* Harga Modal / Kulak dengan Auto-Sync */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Harga Modal / Kulak (Rp)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Harga Modal / Kulak (Rp)
+                  </label>
+                  {!isCostCustomized || costPrice === sellingPrice ? (
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                      ⚡ Auto-Sync
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                      Kustom
+                    </span>
+                  )}
+                </div>
+
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">Rp</span>
                   <input
@@ -513,13 +554,23 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     min="0"
                     step="500"
                     value={costPrice || ''}
-                    onChange={(e) => setCostPrice(Number(e.target.value))}
+                    onChange={(e) => handleCostPriceChange(Number(e.target.value))}
                     className="w-full pl-9 pr-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                  Digunakan untuk menghitung laba bersih konter secara otomatis.
-                </p>
+
+                <div className="mt-1.5 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={handleSyncCostToSelling}
+                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800 cursor-pointer"
+                  >
+                    ⚡ Samakan dg Nominal
+                  </button>
+                  <span className="text-[10px] text-slate-400">
+                    Laba: <strong className="font-mono text-emerald-600 dark:text-emerald-400">+{formatRupiah(calculatedProfit)}</strong>
+                  </span>
+                </div>
               </div>
             </div>
           </div>

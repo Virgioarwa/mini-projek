@@ -78,46 +78,51 @@ export default function App() {
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Theme state with system preference auto-detection
+  // Theme state with system preference auto-detection, direct 2-way switch
   const [theme, setTheme] = useState<'system' | 'dark' | 'light'>(() => {
     return (localStorage.getItem('virgio_theme') as any) || 'system';
   });
-
-  useEffect(() => {
-    const applyTheme = () => {
-      const isDark =
-        theme === 'dark' ||
-        (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-
-    applyTheme();
-
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const listener = () => applyTheme();
-      mediaQuery.addEventListener('change', listener);
-      return () => mediaQuery.removeEventListener('change', listener);
-    }
-  }, [theme]);
-
-  const handleToggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === 'dark' ? 'light' : prev === 'light' ? 'system' : 'dark';
-      localStorage.setItem('virgio_theme', next);
-      return next;
-    });
-  };
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   }, []);
+
+  const isDarkEffective = useMemo(() => {
+    if (theme === 'dark') return true;
+    if (theme === 'light') return false;
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }, [theme]);
+
+  const effectiveTheme: 'dark' | 'light' = isDarkEffective ? 'dark' : 'light';
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkEffective) {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
+
+    // Update status bar theme-color in mobile browsers seamlessly
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', isDarkEffective ? '#0f172a' : '#ffffff');
+    }
+  }, [isDarkEffective]);
+
+  const handleToggleTheme = () => {
+    const next: 'dark' | 'light' = isDarkEffective ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('virgio_theme', next);
+    showToast(
+      next === 'light'
+        ? '☀️ Mode Siang (Terang) Aktif'
+        : '🌙 Mode Malam (Gelap) Aktif'
+    );
+  };
 
   // Check 23:00 auto-close on mount and every 30s
   useEffect(() => {
@@ -426,7 +431,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
       {/* Toast alert */}
       {toastMessage && (
         <div className="fixed top-20 right-4 z-50 max-w-md bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -453,7 +458,7 @@ export default function App() {
         onOpenSettings={() => setIsSettingsModalOpen(true)}
         todayTransactionCount={transactions.length}
         lowStockCount={lowStockCount}
-        theme={theme}
+        theme={effectiveTheme}
         onToggleTheme={handleToggleTheme}
       />
 
